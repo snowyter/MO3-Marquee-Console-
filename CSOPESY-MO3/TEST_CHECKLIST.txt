@@ -1,0 +1,71 @@
+CSOPESY MO3 - Manual Test Checklist
+===================================
+Type each input at the prompt and compare with the expected output.
+Mark [x] when it matches. Re-run the WHOLE list after every big change.
+Every command you type is echoed in grey above its result, like a real shell.
+
+--- Basic commands ---------------------------------------------------------
+[ ] help                  -> table of the 6 spec commands
+[ ] help set_speed        -> "Usage: set_speed [milliseconds]" + description
+[ ] help nope             -> (red) No help for unknown command: 'nope'.
+[ ] start_marquee         -> (green) Marquee started.
+[ ] start_marquee         -> Marquee is already running.
+[ ] stop_marquee          -> (green) Marquee stopped.
+[ ] stop_marquee          -> Marquee is already stopped.
+[ ] exit                  -> "Exiting CSOPESY. Goodbye!", then back to the normal
+                             console with "CSOPESY terminated." 
+
+--- set_text ---------------------------------------------------------------
+[ ] set_text the quick brown fox jumped over the lazy dog
+                          -> Marquee text set to: "the quick brown fox jumped over the lazy dog"
+[ ] set_text "  hello  "  -> Marquee text set to: "  hello  "   (quotes removed, spaces kept)
+[ ] set_text ""           -> (red) Marquee text cannot be empty. Text was not changed.
+[ ] set_text  (then type)  Hello from the prompt
+                          -> prompt changes to "Enter marquee text> ", then
+                             Marquee text set to: "Hello from the prompt"
+[ ] set_text  (then just press Enter)
+                          -> set_text cancelled. Text was not changed.
+
+--- set_speed --------------------------------------------------------------
+[ ] set_speed 100         -> Marquee speed set to 100 ms.
+[ ] set_speed 250ms       -> Marquee speed set to 250 ms.
+[ ] set_speed  (then type) 500
+                          -> prompt changes to "Enter speed in ms> ", then 500 ms
+[ ] set_speed  (then just press Enter)  -> set_speed cancelled. Speed is still ... ms.
+[ ] set_speed abc         -> (red) 'abc' is not a valid number. ...
+[ ] set_speed -5          -> (red) Speed must be a positive number ...
+[ ] set_speed 0           -> (red) Speed must be between 1 and 60000 ms ...
+[ ] set_speed 12.5        -> (red) Speed must be a whole number ...
+[ ] set_speed 99999999999999999  -> (red) Speed must be between 1 and 60000 ms ...
+[ ] set_speed 10 20       -> (red) '10 20' is not a valid number. ...
+    After each red one, the message ends with "Speed is still X ms." (unchanged)
+
+--- Robustness -------------------------------------------------------------
+[ ] (just press Enter)    -> nothing happens, new prompt
+[ ] foo                   -> (red) Unknown command: 'foo'. Type 'help' ...
+[ ]    HELP               -> same as help (case + spaces ignored)
+[ ] Set-Speed 75          -> Marquee speed set to 75 ms.  ('-' works like '_')
+[ ] start_marquee now     -> (red) 'start_marquee' does not take any arguments ...
+[ ] exit now              -> (red) 'exit' does not take any arguments ...  (does NOT exit)
+[ ] clear / screen / process-smi -> (red) Unknown command: ...  (only the 6 MO3 commands exist)
+
+--- Animation (Step 3-4) -----------------------------------------------------
+[ ] On boot: marquee box shows [STOPPED], text sits still
+[ ] start_marquee         -> box shows [RUNNING], text moves left -> right and
+                             wraps back in from the left edge
+[ ] Type "the quick brown fox jumped over the lazy dog" slowly WITHOUT pressing
+    Enter            -> text keeps moving the whole time, every letter appears
+                             immediately, no flicker
+[ ] Backspace             -> deletes the last typed character
+[ ] Esc                   -> clears the whole typed line
+[ ] set_speed 500         -> visibly slower, box title shows "speed: 500 ms"
+[ ] set_speed 20          -> visibly faster
+[ ] set_speed 60000, then set_speed 100
+                          -> speeds back up IMMEDIATELY (not after a minute)
+[ ] set_text with a long sentence (longer than the window)
+                          -> slides through the box, 5-space gap before it repeats
+[ ] stop_marquee          -> text freezes where it is; start_marquee resumes from there
+[ ] help while running    -> marquee keeps moving while help is shown
+[ ] Resize the console window -> frame redraws to the new size, no leftover junk
+[ ] Type a command longer than the window -> the line shows its end, with '<' at left
+[ ] exit while running at set_speed 60000 -> closes within about half a second

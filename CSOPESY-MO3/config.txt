@@ -1,0 +1,19 @@
+# CSOPESY MO3 - Marquee Operator settings
+# Edit this file instead of the code (no recompiling needed).
+# Lines starting with # are comments. Format: key=value
+# NOTE: only takes effect once loadConfig() in src/Config.cpp is implemented.
+
+# Text shown in the marquee at startup
+text=Hello world in marquee!
+
+# Milliseconds between marquee steps (1-60000). set_speed changes it live.
+speed_ms=100
+
+# Milliseconds between keyboard checks (1-1000). Lower = more responsive typing.
+poll_ms=10
+
+# true = marquee moves as soon as the program starts; false = wait for start_marquee
+start_running=false
+
+# left_to_right or right_to_left
+direction=left_to_right
