@@ -16,6 +16,7 @@
 // ---------------------------------------------------------------------------
 */
 #include <chrono>
+#include <csignal>
 #include <string>
 #include <thread>
 #include <vector>
@@ -27,15 +28,25 @@
 #include "Keyboard.h"
 #include "Marquee.h"
 
+namespace {
+    // Ctrl+C should go through the normal shutdown path (so the terminal is
+    // restored), instead of killing the process and leaving it in fullscreen.
+    volatile std::sig_atomic_t interrupted = 0;
+    void handleInterrupt(int) { interrupted = 1; }
+}
+
 int main() {
     // ---------- Bootstrapping ----------
     Console::init();
+    std::signal(SIGINT, handleInterrupt);
 
     // Settings: start from the defaults in Config.h, then let config.txt
-    // override them (loadConfig is a stub until the group finishes Config.cpp -- until then the defaults are used)
+    // override them. A missing file is fine -- defaults are used.
     AppConfig config;
     std::vector<std::string> configWarnings;
-    loadConfig("config.txt", config, configWarnings);
+    if (!loadConfig("config.txt", config, configWarnings)) {
+        configWarnings.push_back("config.txt could not be opened; using the built-in defaults.");
+    }
 
     // ---------- Kernel initialization ----------
     Marquee marquee(config.marqueeText, config.marqueeSpeedMs);
@@ -72,7 +83,7 @@ int main() {
     // ---------- Main loop: keyboard polling ----------
     std::string typed;   // what the user has typed so far on this line
 
-    while (!interpreter.exitRequested()) {
+    while (!interpreter.exitRequested() && !interrupted) {
         bool changed = false;
         KeyEvent key;
 

@@ -20,11 +20,17 @@ namespace {
     // breaking at a space when possible so words aren't cut in half
     std::vector<std::string> wrap(const std::string& text, int width) {
         std::vector<std::string> pieces;
+        if (width <= 1) {              // no room to wrap into: keep it in one piece
+            pieces.push_back(text);
+            return pieces;
+        }
         std::string rest = text;
         const size_t w = static_cast<size_t>(width);
         while (rest.size() > w) {
             size_t cut = rest.rfind(' ', w);                     // last space that fits
-            if (cut == std::string::npos || cut == 0) cut = w;   // one huge word: hard cut
+            // cut <= 1 would not shorten the line (the continuation indent
+            // below would add the same space straight back), so hard cut
+            if (cut == std::string::npos || cut <= 1) cut = w;
             pieces.push_back(rest.substr(0, cut));
             rest = rest.substr(cut);
             if (!rest.empty() && rest[0] == ' ') rest = "  " + rest.substr(1);  // indent continuation

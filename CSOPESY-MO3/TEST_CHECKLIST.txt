@@ -69,3 +69,14 @@ Every command you type is echoed in grey above its result, like a real shell.
 [ ] Resize the console window -> frame redraws to the new size, no leftover junk
 [ ] Type a command longer than the window -> the line shows its end, with '<' at left
 [ ] exit while running at set_speed 60000 -> closes within about half a second
+
+--- Extra edge cases (added Sept 28) -----------------------------------------
+[ ] set_text with 100+ characters and no spaces -> wraps onto the next lines,
+                             no freeze (this used to freeze the whole app)
+[ ] Type 130+ characters without pressing Enter -> the line shows its end
+                             with '<' at the left; the app stays responsive
+[ ] Esc, then IMMEDIATELY type a letter -> the letter appears (nothing lost)
+[ ] Ctrl+C while running -> exits cleanly back to the normal console
+[ ] config.txt line speed_ms=abc -> red warning at startup, speed stays 100
+[ ] rename config.txt away -> red warning, program still starts (defaults)
+[ ] config.txt start_running=true -> marquee is already [RUNNING] at boot

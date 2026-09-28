@@ -2,9 +2,9 @@ CSOPESY - MO3 Marquee Operator
 ==============================
 
 Group members:
-  TODO: Lastname, Firstname
-  TODO: Lastname, Firstname
-  TODO: Lastname, Firstname
+  David, Justin Ice
+  Limpin, Kryster Knowell
+  Singson, Keith Railey
 
 Entry point:
   src/main.cpp  (contains the main() function)
@@ -43,7 +43,7 @@ Commands:
   exit                      Terminates the console
 
 Keys while typing:
-  Enter = run command, Backspace = delete, Esc = clear the line
+  Enter = run command, Backspace = delete, Esc = clear the line, Ctrl+C = quit
 
 Source files (src/):
   main.cpp                boot sequence, animation thread, keyboard polling loop
@@ -52,7 +52,7 @@ Source files (src/):
   Display.*               draws each full frame (header, marquee, output, prompt)
   Keyboard.*              non-blocking key reading (_kbhit/_getch on Windows)
   Console.*               ANSI setup, fullscreen buffer, window size, header text
-  Config.*                settings (AppConfig) + config.txt loader  [STUB: TODO(groupmate)]
+  Config.*                settings (AppConfig) + config.txt loader
   Message.h               message types (Command / Info / Success / Error)
 
 Settings (config.txt, next to README.txt):
@@ -61,6 +61,5 @@ Settings (config.txt, next to README.txt):
   poll_ms=10          keyboard check interval, 1-1000
   start_running=false true = animate immediately
   direction=left_to_right   or right_to_left
-  Edit and re-run -- no recompiling needed.
-  NOTE: takes effect once loadConfig() in src/Config.cpp is implemented
-  (search the code for "TODO(groupmate)").
+  Edit and re-run -- no recompiling needed. Bad lines are reported at
+  startup in red and the default is used instead.

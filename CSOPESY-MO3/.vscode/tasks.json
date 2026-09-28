@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build csopesy",
+            "type": "shell",
+            "command": "C:\\winlibs\\bin\\g++.exe",
+            "args": [
+                "-std=c++17",
+                "-g",
+                "-static",
+                "-pthread",
+                "src/CommandInterpreter.cpp",
+                "src/Config.cpp",
+                "src/Console.cpp",
+                "src/Display.cpp",
+                "src/Keyboard.cpp",
+                "src/Marquee.cpp",
+                "src/main.cpp",
+                "-o",
+                "csopesy.exe"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"]
+        }
+    ]
+}

@@ -42,8 +42,12 @@ namespace {
     termios originalSettings;
     bool haveOriginal = false;
     int originalFlags = 0;
+    int pendingByte = -1;   // a byte read too far while checking for a key sequence
 
-    bool readByte(unsigned char& c) { return read(STDIN_FILENO, &c, 1) == 1; }
+    bool readByte(unsigned char& c) {
+        if (pendingByte >= 0) { c = static_cast<unsigned char>(pendingByte); pendingByte = -1; return true; }
+        return read(STDIN_FILENO, &c, 1) == 1;
+    }
 }
 
 Keyboard::Keyboard() {
@@ -70,9 +74,20 @@ bool Keyboard::poll(KeyEvent& out) {
 
     if (c == 27) {                         // Escape, or the start of an arrow key
         unsigned char extra;               // sequence like ESC [ A
-        bool sequence = false;
-        while (readByte(extra)) sequence = true;
-        out.kind = sequence ? KeyEvent::Other : KeyEvent::Escape;
+        if (!readByte(extra)) {
+            out.kind = KeyEvent::Escape;   // ESC on its own
+        } else if (extra == '[' || extra == 'O') {
+            // Eat the rest of the sequence: parameter bytes (0x30-0x3F) and
+            // intermediate bytes (0x20-0x2F), then the final byte (0x40+).
+            // Arrows, Home/End, PgUp/PgDn and F-keys are all ignored this way.
+            while (readByte(extra) && extra < 0x40) {
+                // keep eating until the final byte is consumed
+            }
+            out.kind = KeyEvent::Other;    // ignored
+        } else {
+            pendingByte = extra;           // a normal key typed right after Esc
+            out.kind = KeyEvent::Escape;   // -> clear the line, keep that key
+        }
     } else if (c == '\n' || c == '\r') {
         out.kind = KeyEvent::Enter;
     } else if (c == 127 || c == '\b') {

@@ -1,7 +1,6 @@
 # CSOPESY MO3 - Marquee Operator settings
 # Edit this file instead of the code (no recompiling needed).
 # Lines starting with # are comments. Format: key=value
-# NOTE: only takes effect once loadConfig() in src/Config.cpp is implemented.
 
 # Text shown in the marquee at startup
 text=Hello world in marquee!

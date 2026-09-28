@@ -8,9 +8,8 @@
 // you to change (starting text, speed, polling rate, ...) must be editable in
 // config.txt instead of in the code.
 //
-// STATUS: AppConfig is finished. loadConfig() and its helpers in Config.cpp
-// are STUBS for the group to complete (search for "TODO(groupmate)").
-// Until then the program simply runs with the defaults below.
+// STATUS: finished -- AppConfig holds the defaults below, and loadConfig()
+// in Config.cpp fills them in from config.txt (missing file = keep defaults).
 // ---------------------------------------------------------------------------
 #include <string>
 #include <vector>

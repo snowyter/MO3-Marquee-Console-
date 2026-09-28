@@ -1,13 +1,11 @@
 // Config.cpp
 /*
 // ---------------------------------------------------------------------------
-   STUB FILE -- to be completed by the group (Step 5).
-   Search for "TODO(groupmate)". Each function says exactly what it must do.
-   The program already compiles and runs with these stubs: loadConfig() just
-   reports "not implemented" by returning false, so the defaults are used.
+   Reads config.txt at startup so the settings can be changed WITHOUT
+   recompiling (the quiz says: only the parameters may change).
 
    config.txt format (one setting per line):
-  
+
        # lines starting with # are comments, blank lines are ignored
        text=Hello world in marquee!
        speed_ms=100
@@ -15,7 +13,10 @@
        start_running=false
        direction=left_to_right
 
-   Test your finished loader against these cases (expected result in []):
+   Every problem (unknown key, bad value, ...) becomes a warning in `warnings`
+   and the setting keeps its default -- one bad line never stops the program.
+
+   Cases this handles (expected result in []):
        speed_ms=250            [speed 250]
        speed_ms = 250          [speed 250 -- spaces around '=' are allowed]
        speed_ms=abc            [warning, speed stays 100]
@@ -38,103 +39,155 @@
 
 namespace {
 
-// ---------------------------------------------------------------------------
-// TODO(groupmate): trimSpaces
-// Return `s` without spaces, tabs, '\r' or '\n' at the START and END.
-// Keep spaces in the middle ("  two  spaces " -> "two  spaces").
-// Hint: CommandInterpreter.cpp already has a trim() you can copy.
-// ---------------------------------------------------------------------------
-[[maybe_unused]] std::string trimSpaces(const std::string& s) {
-    // TODO(groupmate): implement. Returning `s` unchanged for now.
-    return s;
+// Cuts spaces, tabs, '\r' and '\n' off the START and END of `s`.
+// Spaces in the middle stay ("  two  spaces " -> "two  spaces").
+std::string trimSpaces(const std::string& s) {
+    size_t start = 0;
+    while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start]))) ++start;
+    size_t end = s.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1]))) --end;
+    return s.substr(start, end - start);
 }
 
-// ---------------------------------------------------------------------------
-// TODO(groupmate): toLowerCopy
-// Return a lowercase copy of `s` ("TRUE" -> "true"). Used for keys and for
-// the values of start_running and direction.
-// Hint: CommandInterpreter.cpp already has a toLower() you can copy.
-// ---------------------------------------------------------------------------
-[[maybe_unused]] std::string toLowerCopy(const std::string& s) {
-    // TODO(groupmate): implement. Returning `s` unchanged for now.
-    return s;
+// A lowercase copy of `s` ("TRUE" -> "true"). Used for keys and for the
+// values of start_running and direction -- never for the marquee text.
+std::string toLowerCopy(const std::string& s) {
+    std::string out = s;
+    for (char& c : out) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return out;
 }
 
-// ---------------------------------------------------------------------------
-// TODO(groupmate): parseIntInRange
-// Turn `text` into a whole number and store it in `out`.
-// Return true only if ALL of these hold:
-//   - `text` is not empty and contains only digits 0-9 (no '-', '.', spaces)
-//   - the number is between `min` and `max` (inclusive)
-// Otherwise return false and leave `out` unchanged.
-// Watch out: "99999999999999" must not overflow an int -- reject any number
-// with more than 9 digits BEFORE converting (see parseSpeed() in
-// CommandInterpreter.cpp for the same trick).
-// ---------------------------------------------------------------------------
-[[maybe_unused]] bool parseIntInRange(const std::string& text, int min, int max, int& out) {
-    // TODO(groupmate): implement.
-    (void)text; (void)min; (void)max; (void)out;   // silences "unused" warnings; delete when done
+// Turns `text` into a whole number and stores it in `out`.
+// True only if `text` is all digits and the number is between min and max
+// (inclusive); on false `out` is left alone.
+bool parseIntInRange(const std::string& text, int min, int max, int& out) {
+    if (text.empty()) return false;
+
+    for (char c : text) {
+        if (!std::isdigit(static_cast<unsigned char>(c))) return false;
+    }
+
+    // Check the length BEFORE converting, so a huge number like
+    // "99999999999999" can't overflow an int (same trick as parseSpeed()).
+    size_t firstNonZero = text.find_first_not_of('0');
+    std::string digits = (firstNonZero == std::string::npos) ? "0" : text.substr(firstNonZero);
+    if (digits.size() > 9) return false;
+
+    long long value = std::stoll(digits);
+    if (value < min || value > max) return false;
+
+    out = static_cast<int>(value);
+    return true;
+}
+
+// Accepts true/false, yes/no, on/off and 1/0 (any letter case).
+bool parseBool(const std::string& text, bool& out) {
+    std::string value = toLowerCopy(trimSpaces(text));
+
+    if (value == "true"  || value == "yes" || value == "on"  || value == "1") { out = true;  return true; }
+    if (value == "false" || value == "no"  || value == "off" || value == "0") { out = false; return true; }
     return false;
 }
 
-// ---------------------------------------------------------------------------
-// TODO(groupmate): parseBool
-// Accept (case-insensitive): true/false, yes/no, on/off, 1/0.
-// Store the result in `out` and return true; for anything else return false
-// and leave `out` unchanged.
-// ---------------------------------------------------------------------------
-[[maybe_unused]] bool parseBool(const std::string& text, bool& out) {
-    // TODO(groupmate): implement.
-    (void)text; (void)out;
-    return false;
-}
+// Accepts left_to_right / right_to_left (any letter case; '-' works like '_',
+// the same way command names do).
+bool parseDirection(const std::string& text, Marquee::Direction& out) {
+    std::string value = toLowerCopy(trimSpaces(text));
+    for (char& c : value) if (c == '-') c = '_';
 
-// ---------------------------------------------------------------------------
-// TODO(groupmate): parseDirection
-// Accept (case-insensitive) "left_to_right" or "right_to_left" and store
-// Marquee::Direction::LeftToRight / RightToLeft in `out`. Return true on
-// success, false otherwise (leave `out` unchanged).
-// ---------------------------------------------------------------------------
-[[maybe_unused]] bool parseDirection(const std::string& text, Marquee::Direction& out) {
-    // TODO(groupmate): implement.
-    (void)text; (void)out;
+    if (value == "left_to_right") { out = Marquee::Direction::LeftToRight; return true; }
+    if (value == "right_to_left") { out = Marquee::Direction::RightToLeft; return true; }
     return false;
 }
 
 } // namespace
 
-// ---------------------------------------------------------------------------
-// TODO(groupmate): loadConfig  (the main job -- uses all the helpers above)
-//
-// Steps:
-//   1. Open the file:   std::ifstream file(path);
-//      If it can't be opened (if (!file)), return false straight away.
-//   2. Read it line by line:   std::string line; int lineNo = 0;
-//                              while (std::getline(file, line)) { ++lineNo; ... }
-//   3. For each line:
-//        a. line = trimSpaces(line). Skip it if empty or if it starts with '#'.
-//        b. Find '=' (line.find('=')). If there is none, add the warning
-//           "config.txt line N: expected key=value" and continue.
-//        c. key   = toLowerCopy(trimSpaces(part before '='))
-//           value = trimSpaces(part after '=')   (do NOT lowercase the text!)
-//        d. Handle each key -- on a bad value, add a warning and keep the default:
-//             "text"          -> must not be empty           -> config.marqueeText
-//             "speed_ms"      -> parseIntInRange(value, Marquee::MIN_SPEED_MS,
-//                                  Marquee::MAX_SPEED_MS, ...) -> config.marqueeSpeedMs
-//             "poll_ms"       -> parseIntInRange(value, MIN_POLL_MS, MAX_POLL_MS, ...)
-//                                                              -> config.pollMs
-//             "start_running" -> parseBool(...)               -> config.startRunning
-//             "direction"     -> parseDirection(...)          -> config.direction
-//             anything else   -> warning "config.txt line N: unknown setting 'key'"
-//   4. Return true.
-//
-// Warning text should say the line number, the problem, and that the default
-// is being used, e.g.:
-//   "config.txt line 3: speed_ms 'abc' is not a whole number from 1 to 60000; using 100."
-// ---------------------------------------------------------------------------
+// Reads `path` line by line and overwrites the matching fields of `config`.
+// Returns false (and leaves `config` untouched) if the file can't be opened.
 bool loadConfig(const std::string& path, AppConfig& config, std::vector<std::string>& warnings) {
-    // TODO(groupmate): implement (see the steps above). Until then this stub
-    // reads nothing, so the program runs with the defaults from Config.h.
-    (void)path; (void)config; (void)warnings;
-    return false;
+    std::ifstream file(path);
+    if (!file) return false;   // no file -> the caller decides what to say
+
+    std::string line;
+    int lineNo = 0;
+    while (std::getline(file, line)) {
+        ++lineNo;
+
+        // A UTF-8 byte-order mark (some Windows editors add one) would glue
+        // itself to the first key, so drop it before anything else.
+        if (lineNo == 1 && line.size() >= 3 &&
+            static_cast<unsigned char>(line[0]) == 0xEF &&
+            static_cast<unsigned char>(line[1]) == 0xBB &&
+            static_cast<unsigned char>(line[2]) == 0xBF) {
+            line = line.substr(3);
+        }
+
+        line = trimSpaces(line);
+        if (line.empty() || line[0] == '#') continue;   // blank line or comment
+
+        size_t eq = line.find('=');
+        if (eq == std::string::npos) {
+            warnings.push_back("config.txt line " + std::to_string(lineNo) + ": expected key=value");
+            continue;
+        }
+
+        std::string key = toLowerCopy(trimSpaces(line.substr(0, eq)));
+        std::string value = trimSpaces(line.substr(eq + 1));   // text is NOT lowercased
+        if (key.empty()) {
+            warnings.push_back("config.txt line " + std::to_string(lineNo) + ": expected key=value");
+            continue;
+        }
+
+        if (key == "text") {
+            if (value.empty()) {
+                warnings.push_back("config.txt line " + std::to_string(lineNo) +
+                                   ": text cannot be empty; using \"" + config.marqueeText + "\".");
+            } else {
+                config.marqueeText = value;
+            }
+        } else if (key == "speed_ms") {
+            int ms = 0;
+            if (parseIntInRange(value, Marquee::MIN_SPEED_MS, Marquee::MAX_SPEED_MS, ms)) {
+                config.marqueeSpeedMs = ms;
+            } else {
+                warnings.push_back("config.txt line " + std::to_string(lineNo) + ": speed_ms '" + value +
+                                   "' is not a whole number from " + std::to_string(Marquee::MIN_SPEED_MS) +
+                                   " to " + std::to_string(Marquee::MAX_SPEED_MS) + "; using " +
+                                   std::to_string(config.marqueeSpeedMs) + ".");
+            }
+        } else if (key == "poll_ms") {
+            int ms = 0;
+            if (parseIntInRange(value, MIN_POLL_MS, MAX_POLL_MS, ms)) {
+                config.pollMs = ms;
+            } else {
+                warnings.push_back("config.txt line " + std::to_string(lineNo) + ": poll_ms '" + value +
+                                   "' is not a whole number from " + std::to_string(MIN_POLL_MS) +
+                                   " to " + std::to_string(MAX_POLL_MS) + "; using " +
+                                   std::to_string(config.pollMs) + ".");
+            }
+        } else if (key == "start_running") {
+            bool flag = false;
+            if (parseBool(value, flag)) {
+                config.startRunning = flag;
+            } else {
+                warnings.push_back("config.txt line " + std::to_string(lineNo) + ": start_running '" + value +
+                                   "' is not true/false, yes/no, on/off or 1/0; using " +
+                                   (config.startRunning ? "true." : "false."));
+            }
+        } else if (key == "direction") {
+            Marquee::Direction dir = config.direction;
+            if (parseDirection(value, dir)) {
+                config.direction = dir;
+            } else {
+                warnings.push_back("config.txt line " + std::to_string(lineNo) + ": direction '" + value +
+                                   "' is not left_to_right or right_to_left; using " +
+                                   (config.direction == Marquee::Direction::LeftToRight ? "left_to_right."
+                                                                                        : "right_to_left."));
+            }
+        } else {
+            warnings.push_back("config.txt line " + std::to_string(lineNo) + ": unknown setting '" + key + "'");
+        }
+    }
+
+    return true;
 }

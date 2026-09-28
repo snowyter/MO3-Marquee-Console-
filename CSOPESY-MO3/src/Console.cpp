@@ -90,13 +90,12 @@ std::vector<Line> headerLines() {
         {"",    ""},
         {GREEN, "Welcome to the CSOPESY Marquee Operator!"},
         {"",    ""},
-        // TODO(group): fill in your names and the version date
         {"",    "Group developer:"},
-        {"",    "  David, Justin Ice"},   // TODO: member 1
-        {"",    "  Lastname, Firstname"},   // TODO: member 2
-        {"",    "  Lastname, Firstname"},   // TODO: member 3
+        {"",    "  David, Justin Ice"},
+        {"",    "  Limpin, Kryster Knowell"},
+        {"",    "  Singson, Keith Railey"},
         {"",    ""},
-        {"",    "Version date: 09/28/2026"}, // TODO: version date
+        {"",    "Version date: 09/28/2026"},
         {"",    ""},
     };
 }
